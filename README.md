@@ -1,7 +1,7 @@
 # SoundCloud → AIFF / WAV
 
 <p align="center">
-  <img src="logo.svg" alt="logo" width="160">
+  <img src="logo-wordmark.svg" alt="SoundCloud → AIFF / WAV" width="520">
 </p>
 
 Petit outil **local** pour télécharger des morceaux SoundCloud en haute qualité (AIFF ou WAV PCM 16 bits) avec **pochette intégrée** et **nom de fichier propre**, à des fins de **bibliothèque musicale personnelle**.

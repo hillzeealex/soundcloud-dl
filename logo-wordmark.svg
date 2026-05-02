@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" width="720" height="200" role="img" aria-label="SoundCloud DL">
+  <defs>
+    <linearGradient id="wbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1c"/>
+      <stop offset="100%" stop-color="#0a0a0b"/>
+    </linearGradient>
+    <linearGradient id="worange" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff8a3d"/>
+      <stop offset="100%" stop-color="#ff5500"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="720" height="200" rx="28" fill="url(#wbg)"/>
+
+  <!-- icon -->
+  <g transform="translate(100 100)">
+    <circle r="68" fill="none" stroke="#2e2e31" stroke-width="2"/>
+    <circle r="68" fill="none" stroke="url(#worange)" stroke-width="2" stroke-dasharray="5 427" stroke-dashoffset="-320" stroke-linecap="round" transform="rotate(-90)"/>
+    <g fill="url(#worange)">
+      <rect x="-50" y="-5"  width="5" height="10" rx="2.5"/>
+      <rect x="-40" y="-12" width="5" height="24" rx="2.5"/>
+      <rect x="-30" y="-22" width="5" height="44" rx="2.5"/>
+      <rect x="-20" y="-15" width="5" height="30" rx="2.5"/>
+      <rect x="-10" y="-27" width="5" height="54" rx="2.5"/>
+      <rect x="0"   y="-19" width="5" height="38" rx="2.5"/>
+      <rect x="10"  y="-25" width="5" height="50" rx="2.5"/>
+      <rect x="20"  y="-13" width="5" height="26" rx="2.5"/>
+      <rect x="30"  y="-19" width="5" height="38" rx="2.5"/>
+      <rect x="40"  y="-8"  width="5" height="16" rx="2.5"/>
+    </g>
+    <g transform="translate(48 48)">
+      <circle r="18" fill="#0a0a0b" stroke="url(#worange)" stroke-width="2"/>
+      <path d="M0 -8 L0 6 M-7 0 L0 7 L7 0" fill="none" stroke="#ff8a3d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+
+  <!-- wordmark -->
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-weight="700">
+    <text x="200" y="108" font-size="48" fill="#f5f5f7" letter-spacing="-1.5">soundcloud</text>
+    <text x="200" y="158" font-size="48" fill="url(#worange)" letter-spacing="-1.5">→ aiff / wav</text>
+  </g>
+</svg>
