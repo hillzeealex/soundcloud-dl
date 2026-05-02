@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>SoundCloud → AIFF/WAV</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: -apple-system, system-ui, sans-serif; background:#111; color:#eee;
+         display:flex; min-height:100vh; align-items:center; justify-content:center; margin:0; }
+  .card { background:#1c1c1e; padding:32px; border-radius:16px; width:min(480px,92vw);
+          box-shadow:0 10px 40px rgba(0,0,0,.4); }
+  h1 { margin:0 0 8px; font-size:22px; }
+  p.sub { margin:0 0 24px; color:#888; font-size:13px; }
+  input, select, button { font:inherit; padding:12px 14px; border-radius:10px; border:1px solid #333;
+                          background:#2a2a2c; color:#eee; box-sizing:border-box; }
+  input { width:100%; margin-bottom:12px; }
+  .row { display:flex; gap:8px; }
+  select { flex:0 0 110px; }
+  button { flex:1; background:#ff5500; border-color:#ff5500; color:#fff; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .ok { color:#4ade80; } .err { color:#f87171; } .muted { color:#888; }
+
+  #preview { display:none; margin:0 0 16px; padding:12px; background:#000; border-radius:12px;
+             align-items:center; gap:12px; }
+  #preview.show { display:flex; }
+  #cover { width:80px; height:80px; border-radius:8px; object-fit:cover; flex:0 0 80px; background:#222; }
+  #meta { min-width:0; flex:1; }
+  #meta .t { font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #meta .u { color:#888; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  #progress { margin-top:16px; display:none; }
+  #progress.show { display:block; }
+  .bar { height:6px; background:#2a2a2c; border-radius:3px; overflow:hidden; margin-top:8px; }
+  .bar > div { height:100%; width:0; background:#ff5500; transition:width .2s; }
+  #stage { font-size:13px; color:#ccc; }
+  #log { font-size:11px; color:#666; margin-top:6px; font-family:ui-monospace,monospace;
+         white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #status { margin-top:14px; font-size:14px; min-height:1.4em; }
+  .spin { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity:.4; } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>SoundCloud → AIFF / WAV</h1>
+    <p class="sub">Pochette intégrée dans le fichier (tag ID3 APIC).</p>
+
+    <input id="url" type="url" placeholder="https://soundcloud.com/artiste/track" autofocus>
+
+    <div id="preview">
+      <img id="cover" alt="cover">
+      <div id="meta"><div class="t" id="t"></div><div class="u" id="u"></div></div>
+    </div>
+
+    <div class="row">
+      <select id="fmt">
+        <option value="aiff" selected>AIFF</option>
+        <option value="wav">WAV</option>
+      </select>
+      <button id="go">Télécharger</button>
+    </div>
+
+    <div id="progress">
+      <div id="stage"></div>
+      <div class="bar"><div id="fill"></div></div>
+      <div id="log"></div>
+    </div>
+    <div id="status" class="muted">Prêt.</div>
+  </div>
+<script>
+const $ = s => document.querySelector(s);
+const status = (msg, cls="muted") => { $("#status").className = cls; $("#status").textContent = msg; };
+
+let previewToken = 0;
+async function loadPreview(url) {
+  const my = ++previewToken;
+  $("#preview").classList.remove("show");
+  if (!url.startsWith("http")) return;
+  $("#cover").classList.add("spin");
+  try {
+    const r = await fetch("/preview", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ url })
+    });
+    const d = await r.json();
+    if (my !== previewToken) return;
+    if (!r.ok) return status("✗ " + (d.error || "preview impossible"), "err");
+    $("#cover").src = d.thumbnail || "";
+    $("#t").textContent = d.title || "";
+    $("#u").textContent = d.uploader || "";
+    $("#preview").classList.add("show");
+    status("Prêt à télécharger.", "muted");
+  } catch (e) {
+    if (my === previewToken) status("✗ " + e.message, "err");
+  } finally {
+    $("#cover").classList.remove("spin");
+  }
+}
+
+let debounce;
+$("#url").addEventListener("input", e => {
+  clearTimeout(debounce);
+  const v = e.target.value.trim();
+  debounce = setTimeout(() => loadPreview(v), 400);
+});
+
+function parseSSE(buf) {
+  // returns [{event,data}], remaining buffer
+  const events = [];
+  const parts = buf.split("\n\n");
+  const tail = parts.pop();
+  for (const block of parts) {
+    let ev = "message", dat = "";
+    for (const line of block.split("\n")) {
+      if (line.startsWith("event:")) ev = line.slice(6).trim();
+      else if (line.startsWith("data:")) dat = line.slice(5).trim();
+    }
+    try { events.push({ ev, data: JSON.parse(dat) }); } catch {}
+  }
+  return [events, tail];
+}
+
+$("#go").onclick = async () => {
+  const url = $("#url").value.trim();
+  const format = $("#fmt").value;
+  if (!url) return status("Colle un lien SoundCloud.", "err");
+  $("#go").disabled = true;
+  $("#progress").classList.add("show");
+  $("#stage").textContent = "Démarrage…";
+  $("#fill").style.width = "0%";
+  $("#log").textContent = "";
+  status("", "muted");
+
+  try {
+    const r = await fetch("/download", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ url, format })
+    });
+    if (!r.ok) {
+      const d = await r.json().catch(()=>({error:"erreur"}));
+      throw new Error(d.error);
+    }
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const [events, rest] = parseSSE(buf);
+      buf = rest;
+      for (const { ev, data } of events) {
+        if (ev === "stage")    $("#stage").textContent = data.label;
+        else if (ev === "progress") $("#fill").style.width = data.percent + "%";
+        else if (ev === "log")      $("#log").textContent = data.line;
+        else if (ev === "done") {
+          const mb = (data.size / 1048576).toFixed(1);
+          status(`✓ ${data.filename} (${mb} Mo) → ~/Downloads/SoundCloud/`, "ok");
+          $("#fill").style.width = "100%";
+          $("#stage").textContent = "Terminé";
+        }
+        else if (ev === "error") throw new Error(data.error);
+      }
+    }
+  } catch (e) {
+    status("✗ " + e.message, "err");
+    $("#progress").classList.remove("show");
+  } finally {
+    $("#go").disabled = false;
+  }
+};
+$("#url").addEventListener("keydown", e => { if (e.key === "Enter") $("#go").click(); });
+</script>
+</body>
+</html>
