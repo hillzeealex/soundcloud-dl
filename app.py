@@ -68,9 +68,13 @@ def safe_name(s: str) -> str:
 
 
 def strip_premiere_prefix(s: str) -> str:
-    """Retire un éventuel préfixe « Première : » présent sur SoundCloud."""
+    """
+    Retire un éventuel préfixe « Première : » / « Prémière : » / « PREMIERE: »
+    présent sur SoundCloud, peu importe la casse et les accents.
+    Couvre : Premiere, Première, Prémière, PRÉMIÈRE, etc.
+    """
     s = s.strip()
-    cleaned = re.sub(r"^premi[èe]re\s*[:：]\s*", "", s, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"^pr[ée]mi[èe]re\s*[:：]\s*", "", s, flags=re.IGNORECASE).strip()
     return cleaned or s
 
 
