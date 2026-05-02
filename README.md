@@ -1,8 +1,25 @@
 # SoundCloud → AIFF / WAV
 
-Petit outil **local** pour télécharger des morceaux SoundCloud en haute qualité (AIFF ou WAV PCM 16 bits) avec **pochette intégrée** et **nom de fichier propre**, prêts à être chargés dans un logiciel de mix DJ (Rekordbox, Serato, Traktor, Engine DJ…).
+<p align="center">
+  <img src="logo.svg" alt="logo" width="160">
+</p>
+
+Petit outil **local** pour télécharger des morceaux SoundCloud en haute qualité (AIFF ou WAV PCM 16 bits) avec **pochette intégrée** et **nom de fichier propre**, à des fins de **bibliothèque musicale personnelle**.
 
 Une mini-page web s'ouvre sur `http://localhost:8765`, on colle un lien SoundCloud, on choisit AIFF ou WAV, et le fichier atterrit dans `~/Downloads/SoundCloud/`.
+
+---
+
+## 🚫 Charte d'utilisation
+
+Cet outil est destiné **exclusivement à un usage personnel et privé** : se constituer une bibliothèque musicale chez soi. Il est **interdit** d'utiliser les fichiers produits :
+
+- ❌ en **boîte de nuit, club, bar, festival**,
+- ❌ dans un **set DJ public**, en livestream, en radio,
+- ❌ dans toute **diffusion publique, payante ou commerciale**,
+- ❌ pour les **redistribuer** (mise en ligne, partage, revente).
+
+Pour mixer en public, utilisez les plateformes pro (Beatport, Bandcamp, promos labels, etc.) qui rémunèrent les artistes — c'est la seule manière correcte de soutenir la scène.
 
 ---
 

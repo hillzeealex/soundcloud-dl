@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="SoundCloud DL logo">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1c1c1e"/>
+      <stop offset="100%" stop-color="#000"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ff7a18"/>
+      <stop offset="100%" stop-color="#ff5500"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="36" fill="url(#bg)"/>
+  <!-- vinyl disc -->
+  <circle cx="120" cy="108" r="62" fill="#0a0a0a" stroke="#2a2a2c" stroke-width="2"/>
+  <circle cx="120" cy="108" r="50" fill="none" stroke="#1f1f21" stroke-width="1"/>
+  <circle cx="120" cy="108" r="38" fill="none" stroke="#1f1f21" stroke-width="1"/>
+  <circle cx="120" cy="108" r="20" fill="url(#accent)"/>
+  <circle cx="120" cy="108" r="4" fill="#0a0a0a"/>
+  <!-- download arrow -->
+  <g transform="translate(120 108)">
+    <path d="M0 -10 L0 22 M-12 10 L0 22 L12 10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- waveform -->
+  <g stroke="url(#accent)" stroke-width="4" stroke-linecap="round">
+    <line x1="40"  y1="200" x2="40"  y2="186"/>
+    <line x1="56"  y1="200" x2="56"  y2="172"/>
+    <line x1="72"  y1="200" x2="72"  y2="158"/>
+    <line x1="88"  y1="200" x2="88"  y2="180"/>
+    <line x1="104" y1="200" x2="104" y2="150"/>
+    <line x1="120" y1="200" x2="120" y2="140"/>
+    <line x1="136" y1="200" x2="136" y2="150"/>
+    <line x1="152" y1="200" x2="152" y2="180"/>
+    <line x1="168" y1="200" x2="168" y2="158"/>
+    <line x1="184" y1="200" x2="184" y2="172"/>
+    <line x1="200" y1="200" x2="200" y2="186"/>
+  </g>
+</svg>

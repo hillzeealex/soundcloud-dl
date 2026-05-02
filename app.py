@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+# =============================================================================
+#  SoundCloud → AIFF/WAV — petit serveur HTTP local
+#  Auteur : hillzeealex  —  https://github.com/hillzeealex/soundcloud-dl
+# -----------------------------------------------------------------------------
+#  ⚠️  CHARTE D'UTILISATION (à lire avant tout usage)
+#
+#  Cet outil est mis à disposition pour UN USAGE EXCLUSIVEMENT PERSONNEL ET
+#  PRIVÉ : se constituer une bibliothèque musicale chez soi à partir de
+#  morceaux qu'on a légalement le droit de récupérer.
+#
+#  IL EST INTERDIT D'UTILISER LES FICHIERS PRODUITS PAR CET OUTIL :
+#     ✗ en boîte de nuit, en club, en bar, en festival,
+#     ✗ dans un set DJ public, en livestream, en radio,
+#     ✗ dans toute diffusion publique, payante ou commerciale,
+#     ✗ pour les redistribuer (mise en ligne, partage, revente).
+#
+#  De plus, cet outil ne doit JAMAIS être hébergé sur Internet : il tourne
+#  uniquement sur 127.0.0.1, sur la machine de l'utilisateur.
+#
+#  Pour un usage en club / radio / streaming, utilisez les plateformes pro
+#  (Beatport, Bandcamp, promos labels, etc.) qui rémunèrent les artistes.
+# =============================================================================
 """
 SoundCloud → AIFF/WAV — petit serveur HTTP local.
 
@@ -12,8 +34,7 @@ Fonctionnement général :
     4. La progression est renvoyée en direct au navigateur via Server-Sent
        Events (SSE).
 
-⚠️  Cet outil est conçu pour un usage strictement local. Il ne doit pas être
-    exposé sur Internet (voir README).
+Voir l'encadré ci-dessus pour la charte d'utilisation.
 """
 
 import json
@@ -215,6 +236,14 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
+        elif self.path == "/logo.svg":
+            logo_path = Path(__file__).parent / "logo.svg"
+            body = logo_path.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/svg+xml")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
         else:
             self.send_error(404)
 
@@ -267,6 +296,10 @@ if __name__ == "__main__":
     if not shutil.which("yt-dlp") or not shutil.which("ffmpeg"):
         raise SystemExit("yt-dlp et ffmpeg sont requis (brew install yt-dlp ffmpeg)")
 
+    print("┌─────────────────────────────────────────────────────────────┐")
+    print("│  SoundCloud → AIFF/WAV  —  usage personnel uniquement       │")
+    print("│  Interdit en club / radio / diffusion publique.             │")
+    print("└─────────────────────────────────────────────────────────────┘")
     print(f"→ http://localhost:{PORT}")
     print(f"→ Téléchargements dans : {DOWNLOADS}")
     ThreadingServer((HOST, PORT), Handler).serve_forever()
