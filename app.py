@@ -1,40 +1,38 @@
 #!/usr/bin/env python3
 # =============================================================================
-#  SoundCloud → AIFF/WAV — petit serveur HTTP local
-#  Auteur : hillzeealex  —  https://github.com/hillzeealex/soundcloud-dl
+#  SoundCloud → AIFF/WAV — small local HTTP server
+#  Author: hillzeealex  —  https://github.com/hillzeealex/soundcloud-dl
 # -----------------------------------------------------------------------------
-#  ⚠️  CHARTE D'UTILISATION (à lire avant tout usage)
+#  ⚠️  USAGE POLICY (please read before use)
 #
-#  Cet outil est mis à disposition pour UN USAGE EXCLUSIVEMENT PERSONNEL ET
-#  PRIVÉ : se constituer une bibliothèque musicale chez soi à partir de
-#  morceaux qu'on a légalement le droit de récupérer.
+#  This tool is provided for STRICTLY PERSONAL AND PRIVATE USE: building a
+#  music library at home from tracks you are legally allowed to download.
 #
-#  IL EST INTERDIT D'UTILISER LES FICHIERS PRODUITS PAR CET OUTIL :
-#     ✗ en boîte de nuit, en club, en bar, en festival,
-#     ✗ dans un set DJ public, en livestream, en radio,
-#     ✗ dans toute diffusion publique, payante ou commerciale,
-#     ✗ pour les redistribuer (mise en ligne, partage, revente).
+#  YOU MUST NOT USE THE FILES PRODUCED BY THIS TOOL:
+#     ✗ in nightclubs, clubs, bars, festivals,
+#     ✗ in public DJ sets, livestreams, radio shows,
+#     ✗ in any public, paid or commercial broadcast,
+#     ✗ to redistribute them (uploads, sharing, reselling).
 #
-#  De plus, cet outil ne doit JAMAIS être hébergé sur Internet : il tourne
-#  uniquement sur 127.0.0.1, sur la machine de l'utilisateur.
+#  In addition, this tool MUST NEVER be hosted on the internet: it runs
+#  only on 127.0.0.1, on the user's own machine.
 #
-#  Pour un usage en club / radio / streaming, utilisez les plateformes pro
-#  (Beatport, Bandcamp, promos labels, etc.) qui rémunèrent les artistes.
+#  For club / radio / streaming use, please buy from professional platforms
+#  (Beatport, Bandcamp, label promo pools, etc.) that pay the artists.
 # =============================================================================
 """
-SoundCloud → AIFF/WAV — petit serveur HTTP local.
+SoundCloud → AIFF/WAV — small local HTTP server.
 
-Fonctionnement général :
-    1. On expose une page web (index.html) sur http://localhost:8765.
-    2. L'utilisateur colle une URL SoundCloud → un aperçu (titre, artiste,
-       pochette) est récupéré via yt-dlp en mode "no-download".
-    3. Au clic sur "Télécharger", on lance yt-dlp pour récupérer le meilleur
-       audio + la pochette, puis ffmpeg convertit en AIFF ou WAV PCM 16 bits
-       avec la pochette intégrée comme tag ID3 APIC.
-    4. La progression est renvoyée en direct au navigateur via Server-Sent
-       Events (SSE).
+How it works:
+    1. A small web page (index.html) is served on http://localhost:8765.
+    2. The user pastes a SoundCloud URL → a preview (title, artist, cover)
+       is fetched via yt-dlp in "no-download" mode.
+    3. On click, yt-dlp downloads the best available audio + the cover,
+       then ffmpeg converts to 16-bit PCM AIFF or WAV with the cover
+       embedded as an ID3 APIC tag.
+    4. Progress is streamed back to the browser via Server-Sent Events.
 
-Voir l'encadré ci-dessus pour la charte d'utilisation.
+See the banner above for the usage policy.
 """
 
 import json
@@ -51,7 +49,7 @@ from socketserver import ThreadingMixIn
 # ---------------------------------------------------------------------------
 
 PORT = 8765
-HOST = "127.0.0.1"  # localhost uniquement — ne pas exposer sur le réseau
+HOST = "127.0.0.1"  # localhost only — do not expose on the network
 DOWNLOADS = Path.home() / "Downloads" / "SoundCloud"
 DOWNLOADS.mkdir(parents=True, exist_ok=True)
 
@@ -59,19 +57,19 @@ INDEX_HTML = (Path(__file__).parent / "index.html").read_text()
 
 
 # ---------------------------------------------------------------------------
-# Utilitaires sur les noms de fichiers
+# Filename helpers
 # ---------------------------------------------------------------------------
 
 def safe_name(s: str) -> str:
-    """Retire les caractères interdits dans un nom de fichier."""
+    """Strip characters that are not allowed in filenames."""
     return re.sub(r'[\\/:*?"<>|]+', "_", s).strip() or "track"
 
 
 def strip_premiere_prefix(s: str) -> str:
     """
-    Retire un éventuel préfixe « Première : » / « Prémière : » / « PREMIERE: »
-    présent sur SoundCloud, peu importe la casse et les accents.
-    Couvre : Premiere, Première, Prémière, PRÉMIÈRE, etc.
+    Strip a leading "Première: " / "Prémière: " / "PREMIERE: " prefix that
+    SoundCloud sometimes adds. Case-insensitive and accent-insensitive on
+    both "e"s, so it matches: Premiere, Première, Prémière, PRÉMIÈRE, etc.
     """
     s = s.strip()
     cleaned = re.sub(r"^pr[ée]mi[èe]re\s*[:：]\s*", "", s, flags=re.IGNORECASE).strip()
@@ -79,11 +77,11 @@ def strip_premiere_prefix(s: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Aperçu (avant téléchargement)
+# Preview (before download)
 # ---------------------------------------------------------------------------
 
 def preview(url: str) -> dict:
-    """Demande à yt-dlp les métadonnées sans rien télécharger."""
+    """Ask yt-dlp for metadata without downloading anything."""
     result = subprocess.run(
         [
             "yt-dlp",
@@ -103,35 +101,35 @@ def preview(url: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Téléchargement + conversion (en streaming SSE)
+# Download + conversion (streamed via SSE)
 # ---------------------------------------------------------------------------
 
 def stream_download(url: str, fmt: str):
     """
-    Générateur qui yield des tuples (event_name, data_dict) au fil du
-    téléchargement et de la conversion. Les événements possibles :
-        - stage    : changement d'étape (ex. "Conversion en AIFF…")
-        - progress : pourcentage de yt-dlp
-        - log      : ligne brute (debug)
-        - done     : succès (chemin final, taille, etc.)
-        - error    : message d'erreur
+    Generator yielding (event_name, data_dict) tuples while downloading and
+    converting. Possible events:
+        - stage    : stage change (e.g. "Converting to AIFF…")
+        - progress : yt-dlp percentage
+        - log      : raw line (debug)
+        - done     : success (final path, size, etc.)
+        - error    : error message
     """
     if fmt not in ("aiff", "wav"):
-        yield "error", {"error": "format invalide"}
+        yield "error", {"error": "invalid format"}
         return
 
     with tempfile.TemporaryDirectory() as tmp_str:
         tmp = Path(tmp_str)
         out_template = str(tmp / "%(title)s.%(ext)s")
 
-        # 1. Téléchargement audio + miniature avec yt-dlp
-        yield "stage", {"label": "Téléchargement audio…"}
+        # 1. Download audio + thumbnail with yt-dlp
+        yield "stage", {"label": "Downloading audio…"}
         proc = subprocess.Popen(
             [
                 "yt-dlp",
                 "--no-playlist",
-                "--newline",                       # 1 ligne par mise à jour
-                "-f", "bestaudio",                 # meilleure qualité dispo
+                "--newline",                       # one line per progress update
+                "-f", "bestaudio",                 # best available quality
                 "--write-thumbnail",
                 "--convert-thumbnails", "jpg",
                 "-o", out_template,
@@ -151,24 +149,24 @@ def stream_download(url: str, fmt: str):
             yield "log", {"line": line[:200]}
         proc.wait()
         if proc.returncode != 0:
-            yield "error", {"error": "yt-dlp a échoué"}
+            yield "error", {"error": "yt-dlp failed"}
             return
 
-        # 2. On localise les fichiers produits par yt-dlp
+        # 2. Locate files produced by yt-dlp
         audio = next(
             (p for p in tmp.iterdir() if p.suffix not in (".jpg", ".png", ".webp")),
             None,
         )
         thumb = next((p for p in tmp.iterdir() if p.suffix == ".jpg"), None)
         if not audio:
-            yield "error", {"error": "audio introuvable"}
+            yield "error", {"error": "audio file not found"}
             return
 
         title = safe_name(strip_premiere_prefix(audio.stem))
         final = DOWNLOADS / f"{title}.{fmt}"
 
-        # 3. Conversion ffmpeg vers AIFF/WAV avec pochette intégrée
-        yield "stage", {"label": f"Conversion en {fmt.upper()} + intégration pochette…"}
+        # 3. ffmpeg conversion to AIFF/WAV with embedded cover art
+        yield "stage", {"label": f"Converting to {fmt.upper()} + embedding cover…"}
         cmd = ["ffmpeg", "-y", "-i", str(audio)]
         if thumb:
             cmd += [
@@ -182,7 +180,7 @@ def stream_download(url: str, fmt: str):
         else:
             cmd += ["-map", "0:a"]
 
-        # AIFF = PCM big-endian, WAV = PCM little-endian (16 bits dans les deux cas)
+        # AIFF = PCM big-endian, WAV = PCM little-endian (16-bit in both cases)
         codec = "pcm_s16be" if fmt == "aiff" else "pcm_s16le"
         cmd += ["-c:a", codec, "-write_id3v2", "1", str(final)]
 
@@ -200,11 +198,11 @@ def stream_download(url: str, fmt: str):
 
 
 # ---------------------------------------------------------------------------
-# Serveur HTTP
+# HTTP server
 # ---------------------------------------------------------------------------
 
 class Handler(BaseHTTPRequestHandler):
-    """Routage simple : GET / sert la page, POST /preview et POST /download."""
+    """Simple routing: GET / serves the page, POST /preview and POST /download."""
 
     # ----- helpers -----
 
@@ -217,7 +215,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def _send_sse(self, event: str, data: dict) -> bool:
-        """Envoie un évènement SSE. Retourne False si le client a coupé."""
+        """Send an SSE event. Returns False if the client disconnected."""
         chunk = f"event: {event}\ndata: {json.dumps(data)}\n\n".encode()
         try:
             self.wfile.write(chunk)
@@ -256,7 +254,7 @@ class Handler(BaseHTTPRequestHandler):
             payload = self._read_json()
             url = payload.get("url", "").strip()
             if not url.startswith("http"):
-                self._send_json(400, {"error": "URL invalide"})
+                self._send_json(400, {"error": "invalid URL"})
                 return
 
             if self.path == "/preview":
@@ -264,7 +262,7 @@ class Handler(BaseHTTPRequestHandler):
 
             elif self.path == "/download":
                 fmt = payload.get("format", "aiff")
-                # Headers SSE
+                # SSE headers
                 self.send_response(200)
                 self.send_header("Content-Type", "text/event-stream")
                 self.send_header("Cache-Control", "no-cache")
@@ -272,7 +270,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 for event, data in stream_download(url, fmt):
                     if not self._send_sse(event, data):
-                        return  # client déconnecté
+                        return  # client disconnected
 
             else:
                 self.send_error(404)
@@ -288,22 +286,22 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class ThreadingServer(ThreadingMixIn, HTTPServer):
-    """Permet de répondre à un /preview pendant qu'un /download est en cours."""
+    """Allow handling a /preview while a /download is streaming."""
     daemon_threads = True
 
 
 # ---------------------------------------------------------------------------
-# Point d'entrée
+# Entry point
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     if not shutil.which("yt-dlp") or not shutil.which("ffmpeg"):
-        raise SystemExit("yt-dlp et ffmpeg sont requis (brew install yt-dlp ffmpeg)")
+        raise SystemExit("yt-dlp and ffmpeg are required (brew install yt-dlp ffmpeg)")
 
     print("┌─────────────────────────────────────────────────────────────┐")
-    print("│  SoundCloud → AIFF/WAV  —  usage personnel uniquement       │")
-    print("│  Interdit en club / radio / diffusion publique.             │")
+    print("│  SoundCloud → AIFF/WAV  —  personal use only                │")
+    print("│  Not for clubs, radio, or any public broadcast.             │")
     print("└─────────────────────────────────────────────────────────────┘")
     print(f"→ http://localhost:{PORT}")
-    print(f"→ Téléchargements dans : {DOWNLOADS}")
+    print(f"→ Downloads folder: {DOWNLOADS}")
     ThreadingServer((HOST, PORT), Handler).serve_forever()

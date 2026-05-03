@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>SoundCloud → AIFF/WAV</title>
@@ -46,9 +46,9 @@
       <img src="/logo.svg" alt="logo" width="44" height="44" style="border-radius:10px;flex:0 0 44px;">
       <h1 style="margin:0;">SoundCloud → AIFF / WAV</h1>
     </div>
-    <p class="sub">Pochette intégrée (ID3 APIC). <strong style="color:#ff7a18;">Usage personnel uniquement</strong> — interdit en club, radio ou diffusion publique.</p>
+    <p class="sub">Cover embedded in the file (ID3 APIC). <strong style="color:#ff7a18;">Personal use only</strong> — not for clubs, radio or public broadcast.</p>
 
-    <input id="url" type="url" placeholder="https://soundcloud.com/artiste/track" autofocus>
+    <input id="url" type="url" placeholder="https://soundcloud.com/artist/track" autofocus>
 
     <div id="preview">
       <img id="cover" alt="cover">
@@ -60,7 +60,7 @@
         <option value="aiff" selected>AIFF</option>
         <option value="wav">WAV</option>
       </select>
-      <button id="go">Télécharger</button>
+      <button id="go">Download</button>
     </div>
 
     <div id="progress">
@@ -68,7 +68,7 @@
       <div class="bar"><div id="fill"></div></div>
       <div id="log"></div>
     </div>
-    <div id="status" class="muted">Prêt.</div>
+    <div id="status" class="muted">Ready.</div>
   </div>
 <script>
 const $ = s => document.querySelector(s);
@@ -87,12 +87,12 @@ async function loadPreview(url) {
     });
     const d = await r.json();
     if (my !== previewToken) return;
-    if (!r.ok) return status("✗ " + (d.error || "preview impossible"), "err");
+    if (!r.ok) return status("✗ " + (d.error || "preview failed"), "err");
     $("#cover").src = d.thumbnail || "";
     $("#t").textContent = d.title || "";
     $("#u").textContent = d.uploader || "";
     $("#preview").classList.add("show");
-    status("Prêt à télécharger.", "muted");
+    status("Ready to download.", "muted");
   } catch (e) {
     if (my === previewToken) status("✗ " + e.message, "err");
   } finally {
@@ -126,10 +126,10 @@ function parseSSE(buf) {
 $("#go").onclick = async () => {
   const url = $("#url").value.trim();
   const format = $("#fmt").value;
-  if (!url) return status("Colle un lien SoundCloud.", "err");
+  if (!url) return status("Paste a SoundCloud link.", "err");
   $("#go").disabled = true;
   $("#progress").classList.add("show");
-  $("#stage").textContent = "Démarrage…";
+  $("#stage").textContent = "Starting…";
   $("#fill").style.width = "0%";
   $("#log").textContent = "";
   status("", "muted");
@@ -140,7 +140,7 @@ $("#go").onclick = async () => {
       body: JSON.stringify({ url, format })
     });
     if (!r.ok) {
-      const d = await r.json().catch(()=>({error:"erreur"}));
+      const d = await r.json().catch(()=>({error:"error"}));
       throw new Error(d.error);
     }
     const reader = r.body.getReader();
@@ -158,9 +158,9 @@ $("#go").onclick = async () => {
         else if (ev === "log")      $("#log").textContent = data.line;
         else if (ev === "done") {
           const mb = (data.size / 1048576).toFixed(1);
-          status(`✓ ${data.filename} (${mb} Mo) → ~/Downloads/SoundCloud/`, "ok");
+          status(`✓ ${data.filename} (${mb} MB) → ~/Downloads/SoundCloud/`, "ok");
           $("#fill").style.width = "100%";
-          $("#stage").textContent = "Terminé";
+          $("#stage").textContent = "Done";
         }
         else if (ev === "error") throw new Error(data.error);
       }

@@ -4,62 +4,62 @@
   <img src="logo-wordmark.svg" alt="SoundCloud → AIFF / WAV" width="520">
 </p>
 
-Petit outil **local** pour télécharger des morceaux SoundCloud en haute qualité (AIFF ou WAV PCM 16 bits) avec **pochette intégrée** et **nom de fichier propre**, à des fins de **bibliothèque musicale personnelle**.
+Small **local** tool to download SoundCloud tracks in high quality (16-bit PCM AIFF or WAV) with **embedded cover art** and **clean filenames**, for **personal music library** use.
 
-Une mini-page web s'ouvre sur `http://localhost:8765`, on colle un lien SoundCloud, on choisit AIFF ou WAV, et le fichier atterrit dans `~/Downloads/SoundCloud/`.
-
----
-
-## 🚫 Charte d'utilisation
-
-Cet outil est destiné **exclusivement à un usage personnel et privé** : se constituer une bibliothèque musicale chez soi. Il est **interdit** d'utiliser les fichiers produits :
-
-- ❌ en **boîte de nuit, club, bar, festival**,
-- ❌ dans un **set DJ public**, en livestream, en radio,
-- ❌ dans toute **diffusion publique, payante ou commerciale**,
-- ❌ pour les **redistribuer** (mise en ligne, partage, revente).
-
-Pour mixer en public, utilisez les plateformes pro (Beatport, Bandcamp, promos labels, etc.) qui rémunèrent les artistes — c'est la seule manière correcte de soutenir la scène.
+A small web page opens at `http://localhost:8765`, you paste a SoundCloud link, pick AIFF or WAV, and the file lands in `~/Downloads/SoundCloud/`.
 
 ---
 
-## ⚠️ Usage strictement local — interdiction d'héberger sur Internet
+## 🚫 Usage policy
 
-Ce projet est conçu pour tourner **uniquement sur la machine de l'utilisateur**, sur `127.0.0.1`. Il n'est **pas** prévu, **pas** autorisé et **pas** pensé pour être :
+This tool is provided **strictly for personal and private use**: building a music library at home. You may **not** use the produced files:
 
-- déployé sur un serveur public,
-- hébergé en ligne (VPS, conteneur public, plateforme SaaS, etc.),
-- exposé via un tunnel (ngrok, Cloudflare Tunnel, etc.),
-- proposé en service à des tiers.
+- ❌ in **nightclubs, clubs, bars, festivals**,
+- ❌ in **public DJ sets**, livestreams, radio shows,
+- ❌ in any **public, paid or commercial broadcast**,
+- ❌ to **redistribute** them (uploading, sharing, reselling).
 
-Pourquoi :
-
-- **Légal / droit d'auteur** : télécharger des morceaux SoundCloud peut violer leurs CGU et le droit d'auteur selon votre juridiction. Cet outil est un **usage personnel et privé**, à utiliser uniquement pour des morceaux que vous avez le droit de récupérer (vos propres uploads, contenu sous licence libre, ou usage privé autorisé localement).
-- **Sécurité** : le serveur HTTP local est minimaliste, sans authentification ni rate limiting. Le rendre accessible depuis Internet l'exposerait à des abus immédiats.
-
-**Si vous forkez ce dépôt, vous devez conserver cette restriction.** Toute mise en ligne publique ou commerciale est explicitement non autorisée.
+For any public play, please buy from professional platforms (Beatport, Bandcamp, label promo pools, etc.) that pay the artists — that is the only correct way to support the scene.
 
 ---
 
-## À quoi ça sert concrètement
+## ⚠️ Strictly local — never host this on the internet
 
-Quand on prépare un set DJ, on a besoin de fichiers :
+This project is designed to run **only on the user's own machine**, on `127.0.0.1`. It is **not** intended, **not** allowed and **not** built to be:
 
-- **non compressés** (AIFF / WAV) pour conserver la dynamique,
-- **bien nommés** (titre clair, sans préfixe « Première : » ou autre bruit),
-- **avec la pochette intégrée** dans le tag ID3, pour que le morceau s'affiche correctement dans la bibliothèque du logiciel.
+- deployed on a public server,
+- hosted online (VPS, public container, SaaS platform, etc.),
+- exposed through a tunnel (ngrok, Cloudflare Tunnel, etc.),
+- offered as a service to third parties.
 
-C'est ce que fait l'outil, en une seule étape.
+Why:
+
+- **Legal / copyright**: downloading SoundCloud tracks may violate their Terms of Service and copyright depending on your jurisdiction. This tool is for **personal, private use** — only on tracks you have the right to download (your own uploads, freely-licensed content, or use that is permitted locally).
+- **Security**: the local HTTP server is minimal, with no authentication or rate limiting. Exposing it to the internet would invite abuse instantly.
+
+**If you fork this repo, you must keep this restriction.** Any public hosting or commercial use is explicitly not authorized.
 
 ---
 
-## Prérequis
+## What it actually does
 
-- macOS / Linux (testé sur macOS)
+When preparing a DJ set you need files that are:
+
+- **uncompressed** (AIFF / WAV) to preserve dynamics,
+- **clearly named** (clean title, no "Première: " or other noise),
+- **with embedded cover art** in the ID3 tag, so the track shows up correctly in your library software (Rekordbox, Serato, Traktor, Engine DJ…).
+
+That's exactly what the tool does, in one step.
+
+---
+
+## Requirements
+
+- macOS / Linux (tested on macOS)
 - Python 3.9+
-- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) et [`ffmpeg`](https://ffmpeg.org/) dans le `PATH`
+- [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) and [`ffmpeg`](https://ffmpeg.org/) on `PATH`
 
-Sur macOS :
+On macOS:
 
 ```bash
 brew install yt-dlp ffmpeg
@@ -67,40 +67,42 @@ brew install yt-dlp ffmpeg
 
 ---
 
-## Lancer l'outil
+## Run it
 
 ```bash
 python3 app.py
 ```
 
-Puis ouvrir [http://localhost:8765](http://localhost:8765) dans le navigateur.
+Then open [http://localhost:8765](http://localhost:8765) in your browser.
 
-Les fichiers sont écrits dans `~/Downloads/SoundCloud/`.
-
----
-
-## Comment ça marche
-
-1. **Aperçu** : `yt-dlp --no-download` récupère titre, artiste et URL de pochette → affichés dans l'interface.
-2. **Téléchargement** : `yt-dlp -f bestaudio --write-thumbnail` télécharge le meilleur audio disponible + la pochette en JPG dans un dossier temporaire.
-3. **Conversion** : `ffmpeg` ré-encode en PCM 16 bits (AIFF big-endian ou WAV little-endian) et intègre la pochette comme `attached_pic` (tag ID3 APIC).
-4. **Progression** : la sortie de `yt-dlp` est lue ligne par ligne et renvoyée au navigateur via Server-Sent Events.
-
-Le tout en ~250 lignes de Python sans dépendance externe au-delà de `yt-dlp` et `ffmpeg`.
+Files are written to `~/Downloads/SoundCloud/`.
 
 ---
 
-## Structure
+## How it works
+
+1. **Preview**: `yt-dlp --no-download` fetches title, uploader and cover URL → shown in the UI.
+2. **Download**: `yt-dlp -f bestaudio --write-thumbnail` downloads the best available audio + the cover as a JPG, into a temp directory.
+3. **Convert**: `ffmpeg` re-encodes to 16-bit PCM (big-endian for AIFF, little-endian for WAV) and embeds the cover as `attached_pic` (ID3 APIC tag).
+4. **Progress**: `yt-dlp` output is read line by line and streamed to the browser via Server-Sent Events.
+
+All in ~270 lines of Python with no external dependencies beyond `yt-dlp` and `ffmpeg`.
+
+---
+
+## Layout
 
 ```
 .
-├── app.py        # serveur HTTP + logique yt-dlp / ffmpeg
-├── index.html    # interface web (vanille, sans framework)
+├── app.py             # HTTP server + yt-dlp / ffmpeg logic
+├── index.html         # Web UI (vanilla, no framework)
+├── logo.svg           # Square app icon
+├── logo-wordmark.svg  # Horizontal logo with wordmark
 └── README.md
 ```
 
 ---
 
-## Licence
+## License
 
-Code fourni à titre personnel et éducatif. Aucune garantie. À utiliser dans le respect du droit applicable et des conditions d'utilisation des plateformes concernées.
+Code provided for personal and educational use. No warranty. Use it within applicable law and within the terms of service of the platforms involved.
